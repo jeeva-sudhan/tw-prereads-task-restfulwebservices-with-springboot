@@ -2,44 +2,51 @@ package com.tw.prereadstask.swiggycartsystem.service;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 
+import com.tw.prereadstask.swiggycartsystem.dto.FoodResponse;
+import com.tw.prereadstask.swiggycartsystem.dto.RestaurantResponse;
+import com.tw.prereadstask.swiggycartsystem.model.RestaurantFood;
+import com.tw.prereadstask.swiggycartsystem.repository.RestaurantFoodRespository;
+import com.tw.prereadstask.swiggycartsystem.repository.RestaurantRepository;
+import com.tw.prereadstask.swiggycartsystem.util.RestaurantMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.tw.prereadstask.swiggycartsystem.dbrepo.CentralRepo;
-import com.tw.prereadstask.swiggycartsystem.model.FoodItem;
+
 import com.tw.prereadstask.swiggycartsystem.model.Restaurant;
 
 @Service
 public class RestaurantService {
-	
-	@Autowired
-	private CentralRepo centralRepo;
-	
-	public String getRestaurantName(long restaurantId) {
-		List<Restaurant> restaurantList = centralRepo.getRestaurantlist();
-		int length = restaurantList.size();
-		String restaurantName = "";
-		for(int iterator=0;iterator<length;iterator++) {
-			Restaurant restaurant = restaurantList.get(iterator);
-			if(restaurant.getRestaurantId() == restaurantId) {
-				restaurantName = restaurant.getName();
-				break;
-			}
-		}
-		return restaurantName;
-	}
-	
-	public List<Restaurant> getAllRestaurant() {
-		List<Restaurant> restaurantList = centralRepo.getRestaurantlist();
+
+  @Autowired
+  private RestaurantMapper restaurantMapper;
+
+  @Autowired
+  private RestaurantRepository restaurantRepository;
+
+  @Autowired
+  private RestaurantFoodRespository restaurantFoodRespository;
+
+	public List<RestaurantResponse> getAllRestaurant() {
+		Iterable<Restaurant> restaurants = restaurantRepository.findAll();
+    List<RestaurantResponse> restaurantList = new ArrayList<>();
+    for(Restaurant restaurant : restaurants) {
+      restaurantList.add(restaurantMapper.toRestaurantResponse(restaurant));
+    }
 		return restaurantList;
 	}
-	
-	public ArrayList<FoodItem> getRestaurant(long restaurantId) {
-		Map<Long,ArrayList<FoodItem>> restaurantFoodsList = centralRepo.getRestaurantFoods();
-		ArrayList<FoodItem> restaurantFoods = restaurantFoodsList.get(restaurantId);
-		return restaurantFoods;
+
+	public List<FoodResponse> getRestaurantFood(long restaurantId) throws Exception{
+    List<RestaurantFood> restaurantFoods = restaurantFoodRespository.fetchRestaurantFoods(restaurantId).orElseThrow(() -> {
+        return new Exception("invalid restaurant id");
+    });
+    List<FoodResponse> food = new ArrayList<>();
+    int length = restaurantFoods.size();
+    for(int iterator=0;iterator<length;iterator++) {
+      RestaurantFood restaurantFood = restaurantFoods.get(iterator);
+      food.add(restaurantMapper.toFoodResponse(restaurantFood));
+    }
+    return food;
 	}
-	
+
 }

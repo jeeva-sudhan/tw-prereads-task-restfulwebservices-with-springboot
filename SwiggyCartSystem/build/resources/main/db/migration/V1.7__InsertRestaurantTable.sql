@@ -1,0 +1,1 @@
+INSERT INTO restaurant(name, description, address) VALUES('Krishna Bhavan','Attracting a large footfall in every place the stall was set up, be it in malls or in trade fairs, it cleared a setting for the team to leverage on E-Commerce','Plot no 7, Agaram Main Rd, Selaiyur, Chennai, Tamil Nadu 600073');

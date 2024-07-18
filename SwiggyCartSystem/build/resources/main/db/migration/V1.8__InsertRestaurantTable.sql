@@ -1,0 +1,1 @@
+INSERT INTO restaurant(name, description, address) VALUES('A2B','The restaurant chain is known for its authentic South Indian cuisine. The brand has also diversified into offering sweets and snacks, which has become extremely popular across India.','47, Bharathi Salai, Narayana Krishnaraja Puram, Triplicane, Chennai, Tamil Nadu 600005');

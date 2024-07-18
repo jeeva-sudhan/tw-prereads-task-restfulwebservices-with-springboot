@@ -1,30 +1,20 @@
 package com.tw.prereadstask.swiggycartsystem.service;
 
-import java.util.List;
-
+import com.tw.prereadstask.swiggycartsystem.model.FoodItem;
+import com.tw.prereadstask.swiggycartsystem.repository.FoodItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.tw.prereadstask.swiggycartsystem.dbrepo.CentralRepo;
-import com.tw.prereadstask.swiggycartsystem.model.FoodItem;
-
 @Service
 public class FoodItemService {
-	
-	@Autowired
-	private CentralRepo centralRepo;
-	
-	public FoodItem getFoodItem(long foodItemId) {
-		List<FoodItem> foodList = centralRepo.getFoodList();
-		int length = foodList.size();
-		FoodItem food = null;
-		for(int iterator=0;iterator<length;iterator++) {
-			FoodItem foodItem = foodList.get(iterator);
-			if(foodItem.getFoodItemId() == foodItemId) {
-				food = foodItem;
-				break;
-			}
-		}
-		return food;
-	}
+
+  @Autowired
+  private FoodItemRepository foodItemRepository;
+
+  public String name(long foodId) throws Exception {
+    FoodItem food = foodItemRepository.findById(foodId).orElseThrow(() -> {
+      return new Exception("food item not present");
+    });
+    return food.getName();
+  }
 }

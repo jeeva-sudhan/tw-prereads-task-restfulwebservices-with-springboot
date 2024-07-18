@@ -1,43 +1,35 @@
 package com.tw.prereadstask.swiggycartsystem.model;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name="fooditem")
 public class FoodItem {
-	private long foodItemId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+	private long id;
+
+  @Column(name = "name")
 	private String name;
-	private String foodDesc;
-	private double price;
-	
+
 	public FoodItem() {}
-	
-	public FoodItem(long foodItemId, String name, String foodDesc, double price) {
+
+	public FoodItem(long foodItemId, String name) {
 		super();
-		this.foodItemId = foodItemId;
+		this.id = foodItemId;
 		this.name = name;
-		this.foodDesc = foodDesc;
-		this.price = price;
 	}
-	
-	public long getFoodItemId() {
-		return foodItemId;
+
+	public long getId() {
+		return id;
 	}
-	public void setFoodItemId(long foodItemId) {
-		this.foodItemId = foodItemId;
+	public void setId(long id) {
+		this.id = id;
 	}
 	public String getName() {
 		return name;
 	}
 	public void setName(String name) {
 		this.name = name;
-	}
-	public String getFoodDesc() {
-		return foodDesc;
-	}
-	public void setFoodDesc(String foodDesc) {
-		this.foodDesc = foodDesc;
-	}
-	public double getPrice() {
-		return price;
-	}
-	public void setPrice(double price) {
-		this.price = price;
 	}
 }

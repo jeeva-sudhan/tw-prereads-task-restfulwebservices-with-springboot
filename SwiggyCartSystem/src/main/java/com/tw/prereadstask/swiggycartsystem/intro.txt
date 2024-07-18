@@ -1,0 +1,9 @@
+why database:
+data persistent
+data consistent
+data integrity
+indexing & query language - faster retrieval of data
+advantages - normalization, ACID properties
+
+
+file - security relies on os

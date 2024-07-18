@@ -2,91 +2,90 @@ package com.tw.prereadstask.swiggycartsystem.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
+import com.tw.prereadstask.swiggycartsystem.model.*;
+import com.tw.prereadstask.swiggycartsystem.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.tw.prereadstask.swiggycartsystem.dbrepo.CentralRepo;
-import com.tw.prereadstask.swiggycartsystem.dto.CartItemDTO;
-import com.tw.prereadstask.swiggycartsystem.model.Cart;
-import com.tw.prereadstask.swiggycartsystem.model.FoodItem;
-import com.tw.prereadstask.swiggycartsystem.util.IdGenerator;
+import com.tw.prereadstask.swiggycartsystem.dto.UserCartResponse;
 
 @Service
 public class CartService {
-	
-	@Autowired
-	private CentralRepo centralRepo;
-	
-	@Autowired
-	private RestaurantService restaurantService;
-	
-	@Autowired
-	private FoodItemService foodItemService;
-	
-	public List<CartItemDTO> getCartItems(long userId) {
-		Map<Long,ArrayList<Cart>> usersCart = centralRepo.getUsersCart();
-		ArrayList<Cart> userCart = null;
-		for(Map.Entry<Long, ArrayList<Cart>> cart : usersCart.entrySet()) {
-			if(cart.getKey() == userId) {
-				userCart = cart.getValue();
-				break;
-			}
-		}
-		
-		if(userCart == null) {
-			return new ArrayList<CartItemDTO>();
-		}
-		
-		List<CartItemDTO> userCartItems = new ArrayList<CartItemDTO>();
-		
-		int length = userCart.size();
-		for(int iterator=0;iterator<length;iterator++) {
-			Cart cartItem = userCart.get(iterator);
-			CartItemDTO cartItemDto = new CartItemDTO();
-			cartItemDto.setCartItemId(cartItem.getCartItemId());
-			cartItemDto.setRestaurantName(restaurantService.getRestaurantName(cartItem.getRestaurantId()));
-			FoodItem foodItem = foodItemService.getFoodItem(cartItem.getFoodItemId());
-			cartItemDto.setFoodItemName(foodItem.getName());
-			cartItemDto.setFoodItemDesc(foodItem.getFoodDesc());
-			cartItemDto.setFoodItemPrice(foodItem.getPrice());
-			userCartItems.add(cartItemDto);
-		}
-		
-		return userCartItems;
+
+  @Autowired
+  private RestaurantFoodRespository restaurantFoodRespository;
+
+  @Autowired
+  private UserRepository userRepository;
+
+  @Autowired
+  private RestaurantRepository restaurantRepository;
+
+  @Autowired
+  private CartItemRepository cartItemRepository;
+
+  @Autowired
+  private UserCartRepository userCartRepository;
+
+  @Autowired
+  private FoodItemService foodItemService;
+
+	public List<UserCartResponse> getCartItems(String mobileNumber) throws Exception {
+    User user = userRepository.findUserByMobileNumber(mobileNumber).orElseThrow(() -> {
+      return new Exception("Invalid user");
+    });
+
+    List<UserCart> userCartList = userCartRepository.fetchUserCart(user.getId()).orElseThrow(() -> {
+      return new Exception("No items in cart. Add the items into cart");
+    });
+
+    List<UserCartResponse> userCartResponseList = new ArrayList<>();
+
+    int length = userCartList.size();
+    for(int iterator=0;iterator<length;iterator++) {
+      UserCart userCart = userCartList.get(iterator);
+      CartItem cartItem = userCart.getCartItem();
+      String foodName = foodItemService.name(cartItem.getFood().getId());
+
+      RestaurantFoodPK restaurantFoodPK = new RestaurantFoodPK(cartItem.getRestaurant().getId(),cartItem.getFood().getId());
+      RestaurantFood restaurantFood = restaurantFoodRespository.findById(restaurantFoodPK).orElseThrow(() -> {
+        return new Exception("No food items in this restaurant");
+      });;
+
+      UserCartResponse userCartResponse = new UserCartResponse(restaurantFood.getRestaurant().getName(),foodName,restaurantFood.getFoodDescription(),restaurantFood.getFoodPrice());
+      userCartResponseList.add(userCartResponse);
+    }
+    return userCartResponseList;
 	}
-	
-	public void addItemToCart(long userId,long restaurantId,long foodItemId) {
-		Map<Long,ArrayList<Cart>> usersCart = centralRepo.getUsersCart();
-		IdGenerator.generateCartItemId();
-		long cartItemId = IdGenerator.getCartItemId();
-		
-		ArrayList<Cart> userCart;
-		if(usersCart.containsKey(userId)) {
-			userCart = usersCart.get(userId);
-		}
-		else {
-			userCart = new ArrayList<Cart>();
-			usersCart.put(userId, userCart);
-		}
-		Cart cartItem = new Cart();
-		cartItem.setCartItemId(cartItemId);
-		cartItem.setRestaurantId(restaurantId);
-		cartItem.setFoodItemId(foodItemId);
-		userCart.add(cartItem);
+
+	public void addItemToCart(String mobileNumber,long restaurantId,long foodItemId) throws Exception {
+    User user = userRepository.findUserByMobileNumber(mobileNumber).orElseThrow(() -> {
+      return new Exception("Invalid user");
+    });
+    RestaurantFoodPK restaurantFoodPK = new RestaurantFoodPK(restaurantId,foodItemId);
+    Optional<RestaurantFood> restaurantFood = restaurantFoodRespository.findById(restaurantFoodPK);
+
+    CartItem cartItem = new CartItem(restaurantFood.get().getRestaurant(),restaurantFood.get().getFood());
+    cartItem = cartItemRepository.save(cartItem);
+
+    UserCart userCart = new UserCart(user,cartItem);
+    userCartRepository.save(userCart);
 	}
-	
-	public void removeItemFromCart(long cartId,long userId) {
-		Map<Long,ArrayList<Cart>> usersCart = centralRepo.getUsersCart();
-		ArrayList<Cart> userCart = usersCart.get(userId);
-		int length = userCart.size();
-		for(int iterator=0;iterator<length;iterator++) {
-			Cart cartItem = userCart.get(iterator);
-			if(cartItem.getCartItemId() == cartId) {
-				userCart.remove(cartItem);
-				break;
-			}
-		}
-	}
+
+	public void removeItemFromCart(String mobileNumber,long cartId) throws Exception {
+    User user = userRepository.findUserByMobileNumber(mobileNumber).orElseThrow(() -> {
+      return new Exception("Invalid user");
+    });
+
+    CartItem cartItem = cartItemRepository.findById(cartId).orElseThrow(() -> {
+      return new Exception("Invalid cart id");
+    });
+
+    UserCartPK userCartPK = new UserCartPK(user.getId(), cartItem.getCartItemId());
+    userCartRepository.deleteById(userCartPK);
+
+    cartItemRepository.delete(cartItem);
+  }
 }
